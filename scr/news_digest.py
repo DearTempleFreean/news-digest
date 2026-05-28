@@ -83,7 +83,17 @@ def fetch_feed(name, url):
                     pub_date = dt.strftime("%Y-%m-%d %H:%M UTC")
                 except Exception:
                     pass
+            # 날짜 필터링: 최근 24시간 이내 기사만 포함
             if title and link:
+                if hasattr(entry, "published_parsed") and entry.published_parsed:
+                    try:
+                        pub_dt = datetime(*entry.published_parsed[:6], tzinfo=timezone.utc)
+                        now_utc = datetime.now(timezone.utc)
+                        age_hours = (now_utc - pub_dt).total_seconds() / 3600
+                        if age_hours > 24:
+                            continue  # 24시간 넘은 기사 제외
+                    except Exception:
+                        pass  # 날짜 파싱 실패 시 일단 포함
                 items.append({"title": title, "link": link,
                               "summary": summary, "date": pub_date})
         return items
