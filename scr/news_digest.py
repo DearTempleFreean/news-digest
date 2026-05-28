@@ -51,8 +51,9 @@ KEYWORDS = {
     ],
     "💻 기술/IT": [
         "technology", "tech", "ai", "artificial intelligence", "chip", "semiconductor",
-        "software", "hardware", "cyber", "digital", "startup", "silicon valley",
+        "software", "hardware", "cyber", "digital", "physical ai", "startup", "silicon valley",
         "apple", "google", "microsoft", "meta", "amazon", "nvidia", "openai",
+        "coreweave", "palantir technology", "nuscale power", "intel",
         "technologie", "テクノロジー", "科技",
     ],
     "🏛️ 정치/외교": [
