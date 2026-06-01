@@ -1,11 +1,10 @@
 name: 📰 Daily Global News Digest
 
 on:
-# schedule : kst 07:00, 15:00, 23:00 daily
+# schedule : kst 05:00, 17:00 daily
   schedule:
-    - cron: "0 22 * * *"
-    - cron: "0 6 * * *"
-    - cron: "0 14 * * *"
+    - cron: "0 20 * * *"
+    - cron: "0 08 * * *"
   workflow_dispatch:
 
 jobs:
