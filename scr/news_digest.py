@@ -49,7 +49,7 @@ KEYWORDS = {
         "economy", "economic", "finance", "financial", "market", "stock", "bond",
         "inflation", "recession", "gdp", "trade", "investment", "bank", "currency",
         "interest rate", "fed", "ecb", "imf", "wto", "export", "import",
-        "wirtschaft", "markt", "économie", "経済", "金融", "经济",
+        "wirtschaft", "markt", "économie", "経済", "金融", "经济","금리","부채","주식","채권",
     ],
     "💻 기술/IT": [
         "technology", "tech", "ai", "artificial intelligence", "chip", "semiconductor",
