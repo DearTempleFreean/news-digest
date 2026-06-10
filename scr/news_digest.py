@@ -7,6 +7,7 @@ import smtplib
 import ssl
 import os
 import re
+import urllib.request  # 추가: 봇 차단 우회를 위해 웹 요청을 직접 처리
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from datetime import datetime, timezone
@@ -30,18 +31,18 @@ SOURCES = {
     "🇬🇧 Reuters Business":    "https://feeds.reuters.com/reuters/businessNews",
     "🌐 EIN Presswire":        "https://www.einnews.com/rss/newsfeed-full",
     "🇯🇵 Asahi Shimbun":       "https://www.asahi.com/rss/asahi/newsheadlines.rdf",
-    "🇯🇵 Yomiuri Shimbun":     "https://www.yomiuri.co.jp/rss/feed",
-    "🇯🇵 Nikkei Asia":         "https://asia.nikkei.com/rss/feed/nar",
+#    "🇯🇵 Yomiuri Shimbun":     "https://www.yomiuri.co.jp/rss/feed",
+#    "🇯🇵 Nikkei Asia":         "https://asia.nikkei.com/rss/feed/nar",
     "🇨🇳 Global Times":        "https://www.globaltimes.cn/rss/outbrain.xml",
-    "🇨🇳 People's Daily":      "http://en.people.cn/rss/90001.xml",
+#    "🇨🇳 People's Daily":      "http://en.people.cn/rss/90001.xml",
     "🇯🇴 Jordan Times":        "https://jordantimes.com/rss/all",
     "🇫🇷 Le Monde":            "https://www.lemonde.fr/rss/une.xml",
     "🇫🇷 Le Figaro":           "https://www.lefigaro.fr/rss/figaro_actualites.xml",
     "🇩🇪 Der Spiegel":         "https://www.spiegel.de/international/index.rss",
     "🇩🇪 Die Welt":            "https://www.welt.de/feeds/section/wirtschaft.rss",
-    "🇩🇪 FAZ":                 "https://www.faz.net/rss/aktuell/",
-    "이코노미스트":            "https://www.economist.co.kr/article/list/ecn_sc003001000",
-    "매일경제":                "https://www.mk.co.kr/news/finalcial/financial-policy",
+#    "🇩🇪 FAZ":                 "https://www.faz.net/rss/aktuell/",
+    "이코노미스트":            "https://joins.com",
+    "매일경제":                "https://mk.co.kr",
 }
 
 KEYWORDS = {
@@ -58,20 +59,32 @@ KEYWORDS = {
         "coreweave", "palantir technology", "nuscale power", "intel",
         "technologie", "テクノロジー", "科技",
     ],
-    "🏛️ 정치/외교": [
-        "politics", "political", "government", "election", "president", "congress",
-        "senate", "parliament", "policy", "diplomacy", "nato", "united nations",
-        "sanction", "war", "conflict", "treaty", "summit", "minister",
-        "trump", "biden", "xi jinping", "putin", "politik", "politique", "政治",
-    ],
+#    "🏛️ 정치/외교": [
+#        "politics", "political", "government", "election", "president", "congress",
+#        "senate", "parliament", "policy", "diplomacy", "nato", "united nations",
+#        "sanction", "war", "conflict", "treaty", "summit", "minister",
+#        "trump", "biden", "xi jinping", "putin", "politik", "politique", "政治",
+#    ],
 }
 
-MAX_ITEMS_PER_SOURCE = 5
+MAX_ITEMS_PER_SOURCE = 3
 
 
+#
+# 2. 업그레이드된 fetch_feed 함수 (보안 우회 헤더 추가 및 날짜 검증 강화)
 def fetch_feed(name, url):
     try:
-        feed = feedparser.parse(url)
+        # 국내 언론사의 봇 접속 차단을 피하기 위한 헤더 설정
+        req = urllib.request.Request(
+            url, 
+            headers={'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'}
+        )
+        
+        # 데이터를 먼저 읽어온 후 파싱 진행
+        with urllib.request.urlopen(req, timeout=10) as response:
+            html_content = response.read()
+            feed = feedparser.parse(html_content)
+            
         items = []
         for entry in feed.entries[:MAX_ITEMS_PER_SOURCE]:
             title = entry.get("title", "").strip()
@@ -79,31 +92,29 @@ def fetch_feed(name, url):
             summary = entry.get("summary", entry.get("description", "")).strip()
             summary = re.sub(r"<[^>]+>", "", summary)
             summary = summary[:200] + "…" if len(summary) > 200 else summary
+            
             pub_date = ""
+            is_recent = True  # 날짜 확인 실패 시 기본적으로 뉴스 포함
+            
             if hasattr(entry, "published_parsed") and entry.published_parsed:
                 try:
                     dt = datetime(*entry.published_parsed[:6], tzinfo=timezone.utc)
                     pub_date = dt.strftime("%Y-%m-%d %H:%M UTC")
+
+                    # 최근 24시간 이내 기사만 필터링
+                    now_utc = datetime.now(timezone.utc)
+                    age_hours = (now_utc - dt).total_seconds() / 3600
+                    if age_hours > 24:
+                        is_recent = False
                 except Exception:
                     pass
-            # 날짜 필터링: 최근 24시간 이내 기사만 포함
-            if title and link:
-                if hasattr(entry, "published_parsed") and entry.published_parsed:
-                    try:
-                        pub_dt = datetime(*entry.published_parsed[:6], tzinfo=timezone.utc)
-                        now_utc = datetime.now(timezone.utc)
-                        age_hours = (now_utc - pub_dt).total_seconds() / 3600
-                        if age_hours > 24:
-                            continue  # 24시간 넘은 기사 제외
-                    except Exception:
-                        pass  # 날짜 파싱 실패 시 일단 포함
-                items.append({"title": title, "link": link,
-                              "summary": summary, "date": pub_date})
+                    
+            if title and link and is_recent:
+                items.append({"title": title, "link": link, "summary": summary, "date": pub_date})
         return items
     except Exception as e:
-        print(f"  ⚠️  {name}: {e}")
+        print(f"  ⚠️  {name} 수집 중 에러 발생: {e}")
         return []
-
 
 def categorize(title, summary):
     text = (title + " " + summary).lower()
@@ -111,7 +122,6 @@ def categorize(title, summary):
         if any(kw in text for kw in kws):
             return cat
     return "🌍 일반/국제"
-
 
 def collect_all_news():
     all_articles = {}
@@ -122,10 +132,10 @@ def collect_all_news():
         if items:
             all_articles[name] = items
             total += len(items)
-        time.sleep(0.3)
+        time.sleep(0.5)  # 국내 사이트 연속 요청 시 차단 방지를 위해 대기시간 소폭 상향
     print(f"\n  ✅ 총 {total}개 기사 수집 완료")
     return all_articles
-
+#
 
 def build_html(articles):
     now_kst = datetime.now(ZoneInfo("Asia/Seoul"))
