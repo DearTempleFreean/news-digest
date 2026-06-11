@@ -40,8 +40,7 @@ SOURCES = {
     "🇩🇪 Der Spiegel":         "https://www.spiegel.de/international/index.rss",
     "🇩🇪 Die Welt":            "https://www.welt.de/feeds/section/wirtschaft.rss",
     "🇩🇪 FAZ":                 "https://www.faz.net/rss/aktuell/",
-    "이코노미스트":            "https://www.economist.co.kr/article/list/ecn_sc003001000",
-    "매일경제":                "https://www.mk.co.kr/news/finalcial/financial-policy",
+    "매일경제":                "https://file.mk.co.kr/news/rss/rss_30100041.xml",
 }
 
 KEYWORDS = {
