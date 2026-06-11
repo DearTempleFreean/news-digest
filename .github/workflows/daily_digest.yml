@@ -7,6 +7,9 @@ on:
     - cron: "0 08 * * *"
   workflow_dispatch:
 
+# Node 20 감쇠 경고창을 없애고 깃허브 최신 표준(Node 24)으로 강제 작동시키는 설장
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 jobs:
   send-digest:
     runs-on: ubuntu-latest
@@ -27,7 +30,7 @@ jobs:
 
       - name: 📰 Run news digest & send email
         env:
-          GMAIL_ADDRESS: ${{ secrets.GMAIL_ADDRESS }}
-          GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
-          RECIPIENT_EMAILS: ${{ secrets.RECIPIENT_EMAILS }}
+          EMAIL_USER: ${{ secrets.GMAIL_ADDRESS }}
+          EMAIL_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
+          RECIPIENT_EMAIL: ${{ secrets.RECIPIENT_EMAILS }}
         run: python scr/news_digest.py
