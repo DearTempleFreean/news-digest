@@ -40,7 +40,8 @@ SOURCES = {
     "🇩🇪 Der Spiegel":         "https://www.spiegel.de/international/index.rss",
     "🇩🇪 Die Welt":            "https://www.welt.de/feeds/section/wirtschaft.rss",
     "🇩🇪 FAZ":                 "https://www.faz.net/rss/aktuell/",
-    "매일경제":                "https://file.mk.co.kr/news/rss/rss_30100041.xml",
+    "매일경제":                "https://www.mk.co.kr/rss/30100041/",
+    "한국경제":                "https://www.hankyung.com/feed/finance",
 }
 
 KEYWORDS = {
@@ -55,7 +56,7 @@ KEYWORDS = {
         "technology", "tech", "ai", "artificial intelligence", "chip", "semiconductor",
         "software", "hardware", "cyber", "digital", "physical ai", "startup", "silicon valley",
         "apple", "google", "microsoft", "meta", "amazon", "nvidia", "openai",
-        "coreweave", "palantir technology", "nuscale power", "intel",
+        "coreweave", "palantir technology", "nuscale power", "intel", "quantum", "quantum computing",
         "technologie", "テクノロジー", "科技",
     ],
     "🏛️ 정치/외교": [
@@ -66,41 +67,41 @@ KEYWORDS = {
     ],
 }
 
-MAX_ITEMS_PER_SOURCE = 5
+MAX_ITEMS_PER_SOURCE = 3
 
 
-def fetch_feed(name, url):
+def fetch_feed(name, url):                        # name(피드이름)과 url(RSS주소)을 받는 함수를 정의합니다.
     try:
-        feed = feedparser.parse(url)
-        items = []
-        for entry in feed.entries[:MAX_ITEMS_PER_SOURCE]:
-            title = entry.get("title", "").strip()
-            link = entry.get("link", "").strip()
-            summary = entry.get("summary", entry.get("description", "")).strip()
-            summary = re.sub(r"<[^>]+>", "", summary)
-            summary = summary[:200] + "…" if len(summary) > 200 else summary
-            pub_date = ""
-            if hasattr(entry, "published_parsed") and entry.published_parsed:
+        feed = feedparser.parse(url)                # feedparser 라이브러리로 해당 url의 rss/atom 피드를 파싱합니다.
+        items = []                                   # 결과를 담을 빈 리스트 생성
+        for entry in feed.entries[:MAX_ITEMS_PER_SOURCE]:  # 피드에서 가져온 항목들 중 최대 max_items_per_source개만 순회함
+            title = entry.get("title", "").strip()        # 항목의 제목을 가져오고 없으면 빈 문자열 앞뒤 공백을 제거함
+            link = entry.get("link", "").strip()            # 항목의 링크(url)을 가져옴
+            summary = entry.get("summary", entry.get("description", "")).strip()    # 요약문을 가져옴. summary가 없으면 description을 사용하고 둘다 없으면 빈 문자열임
+            summary = re.sub(r"<[^>]+>", "", summary)ㅣ        #정규식으로 요약문 안의 HTML 태그 모두 제거암
+            summary = summary[:400] + "…" if len(summary) > 400 else summary    # 요약문이 400자를 넘으면 잘라내고 ... 를 붙임. 200자 이하면 그래로 둠
+            pub_date = ""                                                        # 발행일 문자열을 담을 변수를 빈 값으로 초기화
+            if hasattr(entry, "published_parsed") and entry.published_parsed:    # 항목에 파싱된 날짜(published_parsed)가 존재하는지 확인
                 try:
-                    dt = datetime(*entry.published_parsed[:6], tzinfo=timezone.utc)
-                    pub_date = dt.strftime("%Y-%m-%d %H:%M UTC")
+                    dt = datetime(*entry.published_parsed[:6], tzinfo=timezone.utc)    # published_parsed는 튜플형식이므로 앞 6개 값(년,월,일,시,분,초)로 datetime객체를 만듬. UTC기준
+                    pub_date = dt.strftime("%Y-%m-%d %H:%M UTC")        # 날짜를 2026-01-02  10:20 UTC 형식의 문자열로 변환
                 except Exception:
                     pass
             # 날짜 필터링: 최근 24시간 이내 기사만 포함
-            if title and link:
-                if hasattr(entry, "published_parsed") and entry.published_parsed:
+            if title and link:                        # 제목과 링크가 모두 있을때만 처리
+                if hasattr(entry, "published_parsed") and entry.published_parsed:        # 날짜 정보가 있는 경우에만 필터링 진행
                     try:
-                        pub_dt = datetime(*entry.published_parsed[:6], tzinfo=timezone.utc)
-                        now_utc = datetime.now(timezone.utc)
-                        age_hours = (now_utc - pub_dt).total_seconds() / 3600
-                        if age_hours > 24:
+                        pub_dt = datetime(*entry.published_parsed[:6], tzinfo=timezone.utc)  # 기사의 발행시각과      
+                        now_utc = datetime.now(timezone.utc)                                # 현재 UTC시각을 각각 구함
+                        age_hours = (now_utc - pub_dt).total_seconds() / 3600            # 두 시각 차이를 초 단위로 구한 뒤 3600으로 나눠 경과 시간(시간 단위)을 계산
+                        if age_hours > 24:                                            
                             continue  # 24시간 넘은 기사 제외
                     except Exception:
                         pass  # 날짜 파싱 실패 시 일단 포함
-                items.append({"title": title, "link": link,
+                items.append({"title": title, "link": link,                # 필터를 통과한 기사를 딕셔너리로 만들어 리스트에 차가함
                               "summary": summary, "date": pub_date})
-        return items
-    except Exception as e:
+        return items                                                        # 수집된 기사 목록 반환
+    except Exception as e:                        # 전체 함수 실행 중 오류가 발생하면 경고 메시지를 출력하고 빈 리스트를 반환(프로그램이 멈추지 않도록 방어 처리)
         print(f"  ⚠️  {name}: {e}")
         return []
 
