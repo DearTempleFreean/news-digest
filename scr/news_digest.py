@@ -15,7 +15,7 @@ from datetime import datetime, timezone
 from zoneinfo import ZoneInfo
 import time
 
-# 느린/응답 없는 피드 보호용 글로벌 소켓 타임아웃 (초)
+# 느린/응답 없는 피드 보호용 글로벌 소켓 타임아웃(초)
 socket.setdefaulttimeout(10)
 
 SOURCES = {
@@ -88,7 +88,7 @@ def fetch_feed(name, url):                        # name(피드이름)과 url(RS
                 try:
                     dt = datetime(*entry.published_parsed[:6], tzinfo=timezone.utc)    # published_parsed는 튜플형식이므로 앞 6개 값(년,월,일,시,분,초)로 datetime객체를 만듬. UTC기준
                     pub_date = dt.strftime("%Y-%m-%d %H:%M UTC")        # 날짜를 2026-01-02  10:20 UTC 형식의 문자열로 변환
-                except (TypeError,ValueError):
+                except (TypeError, ValueError):
                     pass
             # 날짜 필터링: 최근 24시간 이내 기사만 포함
             if title and link:                        # 제목과 링크가 모두 있을때만 처리
@@ -99,7 +99,7 @@ def fetch_feed(name, url):                        # name(피드이름)과 url(RS
                         age_hours = (now_utc - pub_dt).total_seconds() / 3600            # 두 시각 차이를 초 단위로 구한 뒤 3600으로 나눠 경과 시간(시간 단위)을 계산
                         if age_hours > 24:                                            
                             continue  # 24시간 넘은 기사 제외
-                    except (TypeError,ValueError):
+                    except (TypeError, ValueError):
                         pass  # 날짜 파싱 실패 시 일단 포함
                 items.append({"title": title, "link": link,                # 필터를 통과한 기사를 딕셔너리로 만들어 리스트에 추가함
                               "summary": summary, "date": pub_date})
@@ -134,7 +134,6 @@ def collect_all_news():
 def build_html(articles):
     now_kst = datetime.now(ZoneInfo("Asia/Seoul"))
     date_str = now_kst.strftime("%Y년 %m월 %d일 (%A)")            # 한국 시간 기준 현재 시각을 구하고 "2026년 06월 12일(Friday)"형식의 날짜 문자열을 만듭니다
-    # 카테고리별로 (출처,기사) 묶기
     cat_map = {}
     for source, items in articles.items():
         for item in items:
@@ -151,56 +150,46 @@ def build_html(articles):
         items = cat_map[cat]
         articles_html = ""
         for source, item in items:        # 해당 카테고리의(출처, 기사)목록을 가져와, 각 기사별 HTML을 누적할 변수를 준비합니다.
-            safe_source = escape(source)
-            safe_title = escape(item["title"])
-            safe_summary = escape(item["summary"]) if item["summary"] else ""
-            safe_link = escape(item["link"], quote=True)
-            safe_date = escape(item["date"]) if item["date"] else ""
-            date_html = f' <span style="color:#94a3b8;">· {safe_date}</span>' if safe_date else ""
-            summary_html = (
-                f'<div style="font-size:13px;color:#475569;line-height:1.6;">{safe_summary}</div>'
-                if safe_summary else ""
-            )
             articles_html += f"""
-            <div style="border-left:3px solid #2563eb;margin:12px 0;padding:10px 14px;background:#f8fafc;border-radius:0 6px 6px 0;">
+            <div style="border-left:3px solid #2563eb;margin:12px 0;padding:10px 14px;background:#f8fafc;border-radius:0 6px 6px 0;">    
               <div style="font-size:11px;color:#64748b;margin-bottom:4px;">
-                {safe_source}{date_html}
-              </div>
-              <a href="{safe_link}" style="font-size:15px;font-weight:600;color:#1e293b;text-decoration:none;line-height:1.4;display:block;margin-bottom:5px;">
-                {safe_title}
-              </a>
-              {summary_html}
-            </div>"""
-    
-            sections_html += f"""
-             <div style="margin-bottom:32px;">
-               <h2 style="font-size:18px;font-weight:700;color:#1e293b;margin:0 0 12px 0;
+                {source}{f' <span style="color:#94a3b8;">· {item["date"]}</span>' if item["date"] else ""}
+              </div>                                                                                        
+              <a href="{item['link']}" style="font-size:15px;font-weight:600;color:#1e293b;text-decoration:none;line-height:1.4;display:block;margin-bottom:5px;">
+                {item['title']}
+              </a>                
+              {f'<div style="font-size:13px;color:#475569;line-height:1.6;">{item["summary"]}</div>' if item["summary"] else ""}
+            </div>"""            
+
+        sections_html += f"""
+        <div style="margin-bottom:32px;">
+          <h2 style="font-size:18px;font-weight:700;color:#1e293b;margin:0 0 12px 0;
                      padding:8px 14px;background:linear-gradient(135deg,#dbeafe,#ede9fe);
-                     border-radius:6px;display:inline-block;">{escape(cat)}
-             <span style="font-size:13px;font-weight:400;color:#64748b;margin-left:8px;">{len(items)}건</span>
-             </h2>
-             {articles_html}
-            </div>"""
+                     border-radius:6px;display:inline-block;">{cat}
+            <span style="font-size:13px;font-weight:400;color:#64748b;margin-left:8px;">{len(items)}건</span>
+          </h2>
+          {articles_html}
+        </div>"""           
 
     source_stats = "".join(
-        f'<span style="display:inline-block;margin:3px 4px;padding:2px 8px;background:#f1f5f9;border-radius:12px;font-size:11px;color:#64748b;">{escape(s)} ({len(i)})</span>'
+        f'<span style="display:inline-block;margin:3px 4px;padding:2px 8px;background:#f1f5f9;border-radius:12px;font-size:11px;color:#64748b;">{s} ({len(i)})</span>'
         for s, i in articles.items()
-    )
+    )                
 
-    return f"""<!DOCTYPE html>
+    return f"""<!DOCTYPE html>    
 <html lang="ko">
 <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>글로벌 뉴스 다이제스트 - {date_str}</title></head>
+<title>글로벌 뉴스 다이제스트 - {date_str}</title></head>                                                            
 <body style="margin:0;padding:0;font-family:'Segoe UI','Apple SD Gothic Neo',sans-serif;background:#f0f4f8;">
-<div style="max-width:720px;margin:0 auto;background:#ffffff;">
+<div style="max-width:720px;margin:0 auto;background:#ffffff;">                                                    
   <div style="background:linear-gradient(135deg,#1e3a5f 0%,#2563eb 100%);padding:32px;text-align:center;">
     <div style="font-size:11px;letter-spacing:3px;color:#93c5fd;text-transform:uppercase;margin-bottom:8px;">Global News Digest</div>
     <h1 style="margin:0;font-size:26px;font-weight:800;color:#ffffff;">{date_str}</h1>
     <div style="margin-top:12px;font-size:13px;color:#bfdbfe;">
       📊 총 <strong style="color:#fff;">{total_articles}건</strong> · <strong style="color:#fff;">{len(articles)}개</strong> 언론사
     </div>
-  </div>
-  <div style="padding:28px 32px;">{sections_html}</div>
+  </div>                                                                                                                            
+  <div style="padding:28px 32px;">{sections_html}</div>                                                
   <div style="padding:20px 32px;background:#f8fafc;border-top:1px solid #e2e8f0;">{source_stats}</div>
   <div style="padding:20px 32px;background:#1e3a5f;text-align:center;">
     <div style="font-size:12px;color:#93c5fd;">
@@ -208,7 +197,8 @@ def build_html(articles):
       <span style="color:#64748b;font-size:11px;">Generated at {now_kst.strftime('%Y-%m-%d %H:%M KST')}</span>
     </div>
   </div>
-</div></body></html>"""
+</div></body></html>"""        
+
 
 def send_email(html_content, subject):
     sender = os.environ["GMAIL_ADDRESS"]
