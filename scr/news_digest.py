@@ -98,7 +98,7 @@ def fetch_feed(name, url):                        # name(피드이름)과 url(RS
                             continue  # 24시간 넘은 기사 제외
                     except Exception:
                         pass  # 날짜 파싱 실패 시 일단 포함
-                items.append({"title": title, "link": link,                # 필터를 통과한 기사를 딕셔너리로 만들어 리스트에 차가함
+                items.append({"title": title, "link": link,                # 필터를 통과한 기사를 딕셔너리로 만들어 리스트에 추가함
                               "summary": summary, "date": pub_date})
         return items                                                        # 수집된 기사 목록 반환
     except Exception as e:                        # 전체 함수 실행 중 오류가 발생하면 경고 메시지를 출력하고 빈 리스트를 반환(프로그램이 멈추지 않도록 방어 처리)
@@ -107,56 +107,56 @@ def fetch_feed(name, url):                        # name(피드이름)과 url(RS
 
 
 def categorize(title, summary):
-    text = (title + " " + summary).lower()
+    text = (title + " " + summary).lower()    # 제목과 요약을 합쳐서 소문자로 변환한 텍스트를 만듦(대소문자 구분 없이 키워드를 찾기 위함)
     for cat, kws in KEYWORDS.items():
         if any(kw in text for kw in kws):
-            return cat
-    return "🌍 일반/국제"
+            return cat                        # keywords 딕셔너리(카테고리별 키워드 목록)를 순회하며, 키워드 중 하나라도 text에 포함되어 있으면 해당 카테고리를 반환함
+    return "🌍 일반/국제"                      # 어떤 카테고리에도 매칭되지 않으면 기본값으로 "일반/국제"카테고리를 반환함
 
 
 def collect_all_news():
     all_articles = {}
-    total = 0
+    total = 0                                    # 모든 뉴스를 담을 딕셔너리와 총 기사수를 셀 변수를 초기화함
     for name, url in SOURCES.items():
         print(f"  📰 {name} 수집 중...")
-        items = fetch_feed(name, url)
+        items = fetch_feed(name, url)            # sources(언론사명:URL)를 순회하며 각 소스에서 fetch_feed로 기사를 가져옴
         if items:
             all_articles[name] = items
-            total += len(items)
-        time.sleep(0.3)
+            total += len(items)                    # 가져온 기사가 있으면 딕셔너리에 저장하고 총 개수에 더함
+        time.sleep(0.3)                            # 다음 요청 전 0.3초 대기(서버 부담 방지/차단 회피)
     print(f"\n  ✅ 총 {total}개 기사 수집 완료")
-    return all_articles
+    return all_articles                            # 수집 결과를 출력하고 소스별 기사 딕셔너리를 반환함
 
 
 def build_html(articles):
     now_kst = datetime.now(ZoneInfo("Asia/Seoul"))
-    date_str = now_kst.strftime("%Y년 %m월 %d일 (%A)")
+    date_str = now_kst.strftime("%Y년 %m월 %d일 (%A)")            # 한국 시간 기준 현재 시각을 구하고 "2026년 06월 12일(Friday)"형식의 날짜 문자열을 만듭니다
     cat_map = {}
     for source, items in articles.items():
         for item in items:
             cat = categorize(item["title"], item["summary"])
-            cat_map.setdefault(cat, []).append((source, item))
-
-    cat_order = ["💹 경제/금융", "💻 기술/IT", "🏛️ 정치/외교", "🌍 일반/국제"]
+            cat_map.setdefault(cat, []).append((source, item))        # 모든 기사를 순회하며 categorize로 카테고리를 정하고 카테고리별로 (출처,기사) 튜플을 모은
+                                                                        # 딕셔너리(cat_map)를 만듦
+    cat_order = ["💹 경제/금융", "💻 기술/IT", "🏛️ 정치/외교", "🌍 일반/국제"]        # HTML에 출력할 카테고리 순서를 정의함
     sections_html = ""
-    total_articles = sum(len(v) for v in cat_map.values())
+    total_articles = sum(len(v) for v in cat_map.values())                    # 섹션 HTML을 누적할 빈 문자열과 전체 기사수를 계산
 
     for cat in cat_order:
         if cat not in cat_map:
-            continue
+            continue                # 정해진 카테고리 순서대로 순회하며 해당 카테고리에 기사가 없으면 건너뜀
         items = cat_map[cat]
         articles_html = ""
-        for source, item in items:
+        for source, item in items:        # 해당 카테고리의(출처, 기사)목록을 가져와, 각 기사별 HTML을 누적할 변수를 준비합니다.
             articles_html += f"""
-            <div style="border-left:3px solid #2563eb;margin:12px 0;padding:10px 14px;background:#f8fafc;border-radius:0 6px 6px 0;">
+            <div style="border-left:3px solid #2563eb;margin:12px 0;padding:10px 14px;background:#f8fafc;border-radius:0 6px 6px 0;">    # 기사 하나를 감싸는 박스(좌측 파란선, 배경색, 모서리 둥글게)를 시작함
               <div style="font-size:11px;color:#64748b;margin-bottom:4px;">
                 {source}{f' <span style="color:#94a3b8;">· {item["date"]}</span>' if item["date"] else ""}
-              </div>
+              </div>                                                                                        # 출처명을 작은 글씨로 표시하고 item['date']가 있으면 '날짜'형식을 추가로 붙임(없으면 빈 문자열)
               <a href="{item['link']}" style="font-size:15px;font-weight:600;color:#1e293b;text-decoration:none;line-height:1.4;display:block;margin-bottom:5px;">
                 {item['title']}
-              </a>
+              </a>                # 기사 제목을 원문 링크로 거는 클릭 가능한 텍스트로 만듦
               {f'<div style="font-size:13px;color:#475569;line-height:1.6;">{item["summary"]}</div>' if item["summary"] else ""}
-            </div>"""
+            </div>"""            # 요약문이 있으면 본문으로 추가, 없으면 생략.div 박스를 닫음
 
         sections_html += f"""
         <div style="margin-bottom:32px;">
@@ -166,27 +166,27 @@ def build_html(articles):
             <span style="font-size:13px;font-weight:400;color:#64748b;margin-left:8px;">{len(items)}건</span>
           </h2>
           {articles_html}
-        </div>"""
+        </div>"""            # 카테고리 전체를 감싸는 섹션을 만듬. 그라데이션 배경의 제목(카테고리명 + 기사 건수)과 위에서 만든 기사들의 HTML(articles_html)을 넣음. 이를 sections_html에 누적함
 
     source_stats = "".join(
         f'<span style="display:inline-block;margin:3px 4px;padding:2px 8px;background:#f1f5f9;border-radius:12px;font-size:11px;color:#64748b;">{s} ({len(i)})</span>'
         for s, i in articles.items()
-    )
+    )                # 각 언론사별로 언로사명(수집된 기사 수) 형태의 작은 알약(pill)모양 태그를 만들고 모두 이어붙임(메일 하단에 통계용으로 사용될 것으로 보임)
 
-    return f"""<!DOCTYPE html>
+    return f"""<!DOCTYPE html>    # 완성된 HTML문서를 반환하는 부분이 시작됨
 <html lang="ko">
 <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>글로벌 뉴스 다이제스트 - {date_str}</title></head>
+<title>글로벌 뉴스 다이제스트 - {date_str}</title></head>                                                            # 문서 메타정보와 제목(날짜포함)을 설정
 <body style="margin:0;padding:0;font-family:'Segoe UI','Apple SD Gothic Neo',sans-serif;background:#f0f4f8;">
-<div style="max-width:720px;margin:0 auto;background:#ffffff;">
+<div style="max-width:720px;margin:0 auto;background:#ffffff;">                                                    # 메일 본문 전체를 가운데 정렬된 720px너비의 흰 배경 박스로 감쌈.
   <div style="background:linear-gradient(135deg,#1e3a5f 0%,#2563eb 100%);padding:32px;text-align:center;">
     <div style="font-size:11px;letter-spacing:3px;color:#93c5fd;text-transform:uppercase;margin-bottom:8px;">Global News Digest</div>
     <h1 style="margin:0;font-size:26px;font-weight:800;color:#ffffff;">{date_str}</h1>
     <div style="margin-top:12px;font-size:13px;color:#bfdbfe;">
       📊 총 <strong style="color:#fff;">{total_articles}건</strong> · <strong style="color:#fff;">{len(articles)}개</strong> 언론사
     </div>
-  </div>
-  <div style="padding:28px 32px;">{sections_html}</div>
+  </div>                                                                                                                            # 상단 헤더:파란색 그라데이션 배경에 'Global News Digest'라벨, 날짜(큰제목) 총 기사 수와 언론사수를 표시
+  <div style="padding:28px 32px;">{sections_html}</div>                                                # 언론사별 기사 수 통계 알약 태그들을 표시하는 구역
   <div style="padding:20px 32px;background:#f8fafc;border-top:1px solid #e2e8f0;">{source_stats}</div>
   <div style="padding:20px 32px;background:#1e3a5f;text-align:center;">
     <div style="font-size:12px;color:#93c5fd;">
@@ -194,40 +194,40 @@ def build_html(articles):
       <span style="color:#64748b;font-size:11px;">Generated at {now_kst.strftime('%Y-%m-%d %H:%M KST')}</span>
     </div>
   </div>
-</div></body></html>"""
+</div></body></html>"""        # 하단 푸터: 자동 생성 안내문구와 생성 시각을 표시하고 문서를 닫음
 
 
 def send_email(html_content, subject):
     sender = os.environ["GMAIL_ADDRESS"]
-    password = os.environ["GMAIL_APP_PASSWORD"]
+    password = os.environ["GMAIL_APP_PASSWORD"]                            # GitHub Actions의 환경변수(시크릿)에서 발신자 이메일과 앱 비밀번호를 가져옴
     recipients_raw = os.environ.get("RECIPIENT_EMAILS", sender)
-    recipients = [r.strip() for r in recipients_raw.split(",") if r.strip()]
+    recipients = [r.strip() for r in recipients_raw.split(",") if r.strip()]    # 수신자 목록을 환경변수에서 읽되, 없으면 발신자 자신을 수신자로 사용.쉼표로 구분된 여러 이메일을 리스트로 만듬(공백제거, 빈값제외)
 
     msg = MIMEMultipart("alternative")
     msg["Subject"] = subject
     msg["From"] = f"글로벌 뉴스 다이제스트 <{sender}>"
     msg["To"] = ", ".join(recipients)
-    msg.attach(MIMEText(html_content, "html", "utf-8"))
+    msg.attach(MIMEText(html_content, "html", "utf-8"))        # 이메일 메시지를 구성: 제목, 발신자 표시 이름, 수신자 목록, HTML본문을 첨부
 
     context = ssl.create_default_context()
     with smtplib.SMTP_SSL("smtp.gmail.com", 465, context=context) as server:
         server.login(sender, password)
-        server.sendmail(sender, recipients, msg.as_string())
-    print(f"  ✉️  발송 완료 → {', '.join(recipients)}")
+        server.sendmail(sender, recipients, msg.as_string())    # SSL로 Gmail SMTP서버에 접속하여 로그인 후 메일을 발송함
+    print(f"  ✉️  발송 완료 → {', '.join(recipients)}")        # 발송 완료 메시지를 출력함
 
 
 def main():
-    print("\n🌐 글로벌 뉴스 다이제스트 시작\n" + "─" * 50)
+    print("\n🌐 글로벌 뉴스 다이제스트 시작\n" + "─" * 50)    # 시작 안내 메시지를 출력(구분선 포함)
     print("\n[1/3] RSS 피드 수집 중...")
-    articles = collect_all_news()
-    print("\n[2/3] HTML 생성 중...")
-    html = build_html(articles)
+    articles = collect_all_news()                            # 1단계: 모든 소스에서 뉴스를 수집함
+    print("\n[2/3] HTML 생성 중...")                        
+    html = build_html(articles)                               # 2단계: 수집한 기사로 HTML콘텐츠를 생성함
     now_kst = datetime.now(ZoneInfo("Asia/Seoul"))
-    subject = f"📰 글로벌 뉴스 다이제스트 | {now_kst.strftime('%Y년 %m월 %d일')}"
+    subject = f"📰 글로벌 뉴스 다이제스트 | {now_kst.strftime('%Y년 %m월 %d일')}"        # 현재 한국 시각 기준으로 메일 제목 작성
     print("\n[3/3] 이메일 발송 중...")
-    send_email(html, subject)
-    print("\n✅ 완료!\n" + "─" * 50)
+    send_email(html, subject)                # 3단계: 생성된 HTML을 이메일로 발송함
+    print("\n✅ 완료!\n" + "─" * 50)        # 완료 메시지를 출력
 
 
 if __name__ == "__main__":
-    main()
+    main()                    # 이 파일을 직접 실행할 때 main()함수를 호출(다른 파일에서 import할때는 실행되지 않음)
