@@ -78,7 +78,7 @@ def fetch_feed(name, url):                        # name(피드이름)과 url(RS
             title = entry.get("title", "").strip()        # 항목의 제목을 가져오고 없으면 빈 문자열 앞뒤 공백을 제거함
             link = entry.get("link", "").strip()            # 항목의 링크(url)을 가져옴
             summary = entry.get("summary", entry.get("description", "")).strip()    # 요약문을 가져옴. summary가 없으면 description을 사용하고 둘다 없으면 빈 문자열임
-            summary = re.sub(r"<[^>]+>", "", summary)ㅣ        #정규식으로 요약문 안의 HTML 태그 모두 제거암
+            summary = re.sub(r"<[^>]+>", "", summary)      #정규식으로 요약문 안의 HTML 태그 모두 제거암
             summary = summary[:400] + "…" if len(summary) > 400 else summary    # 요약문이 400자를 넘으면 잘라내고 ... 를 붙임. 200자 이하면 그래로 둠
             pub_date = ""                                                        # 발행일 문자열을 담을 변수를 빈 값으로 초기화
             if hasattr(entry, "published_parsed") and entry.published_parsed:    # 항목에 파싱된 날짜(published_parsed)가 존재하는지 확인
