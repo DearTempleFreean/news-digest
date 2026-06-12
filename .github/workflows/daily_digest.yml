@@ -1,10 +1,11 @@
 name: 📰 Daily Global News Digest
 
 on:
-# schedule : kst 05:00, 17:00 daily
+# schedule : kst 05:07, 17:07 daily
+# GitHub Actions는 정시(:00)에 부하가 몰려 지연/스킵될 수 있어 :07로 offset
   schedule:
-    - cron: "0 20 * * *"
-    - cron: "0 08 * * *"
+    - cron: "7 20 * * *" # UTC 20:07 = KST 05:07(다음날)
+    - cron: "7 8 * * *"  # UTC 08:07 = KST 17:07
   workflow_dispatch:
 
 # Node 20 감쇠 경고창을 없애고 깃허브 최신 표준(Node 24)으로 강제 작동시키는 설장
