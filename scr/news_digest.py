@@ -172,15 +172,15 @@ def build_html(articles):
               {summary_html}
             </div>"""
     
-       sections_html += f"""
-        <div style="margin-bottom:32px;">
-          <h2 style="font-size:18px;font-weight:700;color:#1e293b;margin:0 0 12px 0;
+            sections_html += f"""
+             <div style="margin-bottom:32px;">
+               <h2 style="font-size:18px;font-weight:700;color:#1e293b;margin:0 0 12px 0;
                      padding:8px 14px;background:linear-gradient(135deg,#dbeafe,#ede9fe);
                      border-radius:6px;display:inline-block;">{escape(cat)}
-            <span style="font-size:13px;font-weight:400;color:#64748b;margin-left:8px;">{len(items)}건</span>
-          </h2>
-          {articles_html}
-        </div>"""
+             <span style="font-size:13px;font-weight:400;color:#64748b;margin-left:8px;">{len(items)}건</span>
+             </h2>
+             {articles_html}
+            </div>"""
 
     source_stats = "".join(
         f'<span style="display:inline-block;margin:3px 4px;padding:2px 8px;background:#f1f5f9;border-radius:12px;font-size:11px;color:#64748b;">{escape(s)} ({len(i)})</span>'
