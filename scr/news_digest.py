@@ -70,7 +70,7 @@ KEYWORDS = {
     ],
 }
 
-MAX_ITEMS_PER_SOURCE = 3
+MAX_ITEMS_PER_SOURCE = 5
 
 
 def fetch_feed(name, url):                        # name(피드이름)과 url(RSS주소)을 받는 함수를 정의합니다.
