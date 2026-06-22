@@ -50,13 +50,13 @@ SOURCES = {
 KEYWORDS = {
     "💹 경제/금융": [
         "economy", "economic", "finance", "financial", "market", "stock", "bond",
-        "inflation", "recession", "gdp", "trade", "investment", "bank", "currency",
-        "interest rate", "fed", "ecb", "imf", "wto", "export", "import",
+        "inflation", "recession", "gdp", "trade", "investment", "bank", "banking", "currency",
+        "interest rate", "fed", "ecb", "imf", "wto", "export", "import", "monetary",
         "wirtschaft", "markt", "économie", "経済", "金融", "经济",
         "금리","부채","주식","채권","환율","물가",
     ],
     "💻 기술/IT": [
-        "technology", "tech", "ai", "artificial intelligence", "chip", "semiconductor",
+        "technology", "tech", "ai", "openai", "artificial intelligence", "chip", "chips", "semiconductor",
         "software", "hardware", "cyber", "digital", "physical ai", "startup", "silicon valley",
         "apple", "google", "microsoft", "meta", "amazon", "nvidia", "openai",
         "coreweave", "palantir technology", "nuscale power", "intel", "quantum", "quantum computing",
@@ -64,8 +64,8 @@ KEYWORDS = {
     ],
     "🏛️ 정치/외교": [
         "politics", "political", "government", "election", "president", "congress",
-        "senate", "parliament", "policy", "diplomacy", "nato", "united nations",
-        "sanction", "war", "conflict", "treaty", "summit", "minister",
+        "senate", "parliament", "policy", "diplomacy", "nato", "united nations", "legislation",
+        "sanction", "war", "conflict", "treaty", "summit", "minister", "prime minister",
         "trump", "biden", "xi jinping", "putin", "politik", "politique", "政治",
     ],
 }
@@ -111,9 +111,26 @@ def fetch_feed(name, url):                        # name(피드이름)과 url(RS
 
 def categorize(title, summary):
     text = (title + " " + summary).lower()    # 제목과 요약을 합쳐서 소문자로 변환한 텍스트를 만듦(대소문자 구분 없이 키워드를 찾기 위함)
+    # HTML 엔티티 및 특수문자 정규화
+    text = re.sub(r"['\u2019\u2018]","'", text) # 스마트 따옴표 정규화
+    text = re.sub(r"[-–—]", " ", text)    # 하이픈/대시 -> 공백 (interest-rate -> interest rate)
+    text = re.sub(r"[^\w\s]", " ", text)    # 나머지 특수문자 제거
+    text = re.sub(r"\s+", " ", text)        # 다중 공백 정리
+    
     for cat, kws in KEYWORDS.items():
-        if any(kw in text for kw in kws):
-            return cat                        # keywords 딕셔너리(카테고리별 키워드 목록)를 순회하며, 키워드 중 하나라도 text에 포함되어 있으면 해당 카테고리를 반환함
+        for kw in kws:
+            kw_clean = re.sub(r"[-–—]", " ", kw.lower())
+            if " " in kw_clean:
+                # 복합 키워드 : 구문 그대로 검색 (단어 경계 불필요)
+                if kw_clean in text:
+                    return cat
+            else:
+                # 단일 키워드: 반드시 단어 경계(\b) 적용
+                if re.search(rf"\b{re.escape(kw_clean)}\b",text):
+                    return cat
+                    
+#        if any(kw in text for kw in kws):
+#            return cat                        # keywords 딕셔너리(카테고리별 키워드 목록)를 순회하며, 키워드 중 하나라도 text에 포함되어 있으면 해당 카테고리를 반환함
     return "🌍 일반/국제"                      # 어떤 카테고리에도 매칭되지 않으면 기본값으로 "일반/국제"카테고리를 반환함
 
 
