@@ -81,7 +81,7 @@ def fetch_feed(name, url):                        # name(피드이름)과 url(RS
             title = entry.get("title", "").strip()        # 항목의 제목을 가져오고 없으면 빈 문자열 앞뒤 공백을 제거함
             link = entry.get("link", "").strip()            # 항목의 링크(url)을 가져옴
             summary = entry.get("summary", entry.get("description", "")).strip()    # 요약문을 가져옴. summary가 없으면 description을 사용하고 둘다 없으면 빈 문자열임
-            summary = re.sub(r"<[^>]+>", "", summary)      #정규식으로 요약문 안의 HTML 태그 모두 제거암
+            summary = re.sub(r"<[^>]+>", "", summary)      #정규식으로 요약문 안의 HTML 태그 모두 제거함
             summary = summary[:400] + "…" if len(summary) > 400 else summary    # 요약문이 400자를 넘으면 잘라내고 ... 를 붙임. 200자 이하면 그래로 둠
             pub_date = ""                                                        # 발행일 문자열을 담을 변수를 빈 값으로 초기화
             if hasattr(entry, "published_parsed") and entry.published_parsed:    # 항목에 파싱된 날짜(published_parsed)가 존재하는지 확인
@@ -112,10 +112,10 @@ def fetch_feed(name, url):                        # name(피드이름)과 url(RS
 def categorize(title, summary):
     text = (title + " " + summary).lower()    # 제목과 요약을 합쳐서 소문자로 변환한 텍스트를 만듦(대소문자 구분 없이 키워드를 찾기 위함)
     # HTML 엔티티 및 특수문자 정규화
-    text = re.sub(r"['\u2019\u2018]","'", text) # 스마트 따옴표 정규화
-    text = re.sub(r"[-–—]", " ", text)    # 하이픈/대시 -> 공백 (interest-rate -> interest rate)
-    text = re.sub(r"[^\w\s]", " ", text)    # 나머지 특수문자 제거
-    text = re.sub(r"\s+", " ", text)        # 다중 공백 정리
+    text = re.sub(r"['\u2019\u2018]","'", text) # 스마트 따옴표 정규화(' 일반따옴표, U2019: 왼쪽 방향 스마트 따옴표(`), U2018: 오른쪽 방향)
+    text = re.sub(r"[-–—]", " ", text)    # 하이픈, en dash, em dash -> 공백 (interest-rate -> interest rate)
+    text = re.sub(r"[^\w\s]", " ", text)    # 나머지 특수문자 제거: (^ 뒤에 오는 것(\w\s) 제외, \w 영어알파벳 숫자 언더스코어, \s 공백문자(스페이스, 탭, 줄바꿈)
+    text = re.sub(r"\s+", " ", text)        # 다중 공백 정리, 검색대상이 2개 이상일때 대괄호[] 사용하고 or의 의미임
     
     for cat, kws in KEYWORDS.items():
         for kw in kws:
