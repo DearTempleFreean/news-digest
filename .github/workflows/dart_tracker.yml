@@ -1,0 +1,38 @@
+name: DART Tracker
+
+on:
+  schedule:
+    # UTC 기준 09:00 = 한국시간(KST) 18:00
+    - cron: "0 9 * * *"
+  workflow_dispatch: {}   # 수동 실행 버튼도 사용 가능
+
+jobs:
+  run-dart-tracker:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          pip install requests
+
+      - name: Restore corpCode cache
+        uses: actions/cache@v4
+        with:
+          path: corpCode.json
+          key: dart-corpcode-v1
+
+      - name: Run DART tracker
+        env:
+          DART_API_KEY: ${{ secrets.DART_API_KEY }}
+          gmail_address: ${{ secrets.gmail_address }}
+          gmail_app_password: ${{ secrets.gmail_app_password }}
+          recipient_emails: ${{ secrets.recipient_emails }}
+          LOOKBACK_DAYS: "1"
+        run: python dart_tracker/dart_tracker.py
