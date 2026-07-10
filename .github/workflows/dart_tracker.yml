@@ -16,7 +16,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: "3.11"
+          python-version: "3.12"
 
       - name: Install dependencies
         run: |
@@ -31,8 +31,8 @@ jobs:
       - name: Run DART tracker
         env:
           DART_API_KEY: ${{ secrets.DART_API_KEY }}
-          gmail_address: ${{ secrets.gmail_address }}
-          gmail_app_password: ${{ secrets.gmail_app_password }}
-          recipient_emails: ${{ secrets.recipient_emails }}
+          gmail_address: ${{ secrets.GMAIL_ADDRESS }}
+          gmail_app_password: ${{ secrets.GMAIL_APP_PASSWORD }}
+          recipient_emails: ${{ secrets.RECIPIENT_EMAILS }}
           LOOKBACK_DAYS: "1"
-        run: python dart_tracker/dart_tracker.py
+        run: python scr/dart_tracker.py
